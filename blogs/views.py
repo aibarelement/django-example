@@ -1,23 +1,38 @@
-from django.forms import model_to_dict
-from django.http import JsonResponse
-from blogs.models import Blog
+from rest_framework import status
+from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, ViewSet
+from blogs import services, serializers
 
 
-def index(request):
-    queryset = Blog.objects.filter(title__in=request.GET.getlist('title', []))
-    blogs = [model_to_dict(b) for b in queryset]
-    return JsonResponse(blogs, safe=False)
+class BlogViewSet(ModelViewSet):
+    serializer_class = serializers.BlogModelSerializer
+    blog_services: services.BlogServicesInterface = services.BlogServicesV1()
+
+    def get_queryset(self):
+        return self.blog_services.get_blogs()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.blog_services.create_blog(data=serializer.validated_data)
+        headers = self.get_success_headers(serializer.data)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-def create_blog(request):
-    blog = Blog.objects.create(
-        title=request.POST.get('title'),
-        body=request.POST.get('body')
-    )
-    return JsonResponse(model_to_dict(blog), safe=False)
+class BlogViewSetV2(ViewSet):
+    blog_services: services.BlogServicesInterface = services.BlogServicesV1()
 
+    def list(self, request):
+        queryset = self.blog_services.get_blogs()
+        serializer = serializers.BlogModelSerializer(queryset, many=True)
 
-def delete_blog(request, *args, **kwargs):
-    Blog.objects.get(**kwargs).delete()
+        return Response(serializer.data)
 
-    return JsonResponse({}, safe=False, status=204)
+    def retrieve(self, request, pk=None):
+        queryset = self.blog_services.get_blogs()
+        user = get_object_or_404(queryset, pk=pk)
+        serializer = serializers.BlogModelSerializer(user)
+
+        return Response(serializer.data)
