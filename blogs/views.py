@@ -1,11 +1,24 @@
 from rest_framework import status
-from rest_framework.generics import get_object_or_404
+from rest_framework.decorators import api_view
+from rest_framework.mixins import CreateModelMixin, DestroyModelMixin, ListModelMixin
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, ViewSet
-from blogs import services, serializers
+from rest_framework.viewsets import GenericViewSet, ViewSet
+
+from blogs import models, serializers, services
 
 
-class BlogViewSet(ModelViewSet):
+@api_view(['POST'])
+def index(request):
+    serializer = serializers.BlogSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    blog = models.Blog.objects.create(**serializer.validated_data)
+
+    serializer = serializers.BlogModelSerializer(blog)
+    return Response(serializer.data)
+
+
+class BlogAPIView(CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet):
     serializer_class = serializers.BlogModelSerializer
     blog_services: services.BlogServicesInterface = services.BlogServicesV1()
 
@@ -15,24 +28,30 @@ class BlogViewSet(ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         self.blog_services.create_blog(data=serializer.validated_data)
-        headers = self.get_success_headers(serializer.data)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.blog_services.delete_blog(blog=instance)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class BlogViewSetV2(ViewSet):
-    blog_services: services.BlogServicesInterface = services.BlogServicesV1()
+class BlogViewSet(ViewSet):
 
-    def list(self, request):
-        queryset = self.blog_services.get_blogs()
+    def list(self, request, *args, **kwargs):
+        queryset = models.Blog.objects.all()
         serializer = serializers.BlogModelSerializer(queryset, many=True)
 
         return Response(serializer.data)
 
-    def retrieve(self, request, pk=None):
-        queryset = self.blog_services.get_blogs()
-        user = get_object_or_404(queryset, pk=pk)
-        serializer = serializers.BlogModelSerializer(user)
+    def create(self, request, *args, **kwargs):
+        serializer = serializers.BlogModelSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        models.Blog.objects.create(**serializer.validated_data)
 
         return Response(serializer.data)
