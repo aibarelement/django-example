@@ -2,11 +2,11 @@ from typing import Protocol, OrderedDict
 
 from django.db.models import QuerySet
 
-from blogs import models, repositories
+from blogs import models, repos
 
 
 class BlogServicesInterface(Protocol):
-    repos: repositories.BlogRepositoriesInterface
+    repos: repos.BlogReposInterface
 
     def create_blog(self, data: OrderedDict) -> models.Blog: ...
 
@@ -14,12 +14,12 @@ class BlogServicesInterface(Protocol):
 
 
 class BlogServicesV1:
-    repos: repositories.BlogRepositoriesInterface = repositories.BlogRepositoriesV1()
+    blog_repos: repos.BlogReposInterface = repos.BlogReposV1()
 
     def create_blog(self, data: OrderedDict) -> models.Blog:
         print('create blog in service layer')
-        return self.repos.create_blog(data=data)
+        return self.blog_repos.create_blog(data=data)
 
     def get_blogs(self) -> QuerySet[models.Blog]:
         print('get blogs in service layer')
-        return self.repos.get_blogs()
+        return self.blog_repos.get_blogs()
