@@ -2,7 +2,15 @@ from rest_framework import serializers
 from accounts import models
 
 
+class _WalletAccountSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.Account
+        fields = ('id', 'first_name', 'last_name')
+
+
 class WalletSerializer(serializers.ModelSerializer):
+    account = _WalletAccountSerializer(read_only=True)
 
     class Meta:
         model = models.Wallet
@@ -21,16 +29,9 @@ class _AccountWalletSerializer(serializers.ModelSerializer):
 
 
 class AccountSerializer(serializers.ModelSerializer):
-    # wallets = _AccountWalletSerializer(read_only=True, many=True)
+    wallets = _AccountWalletSerializer(read_only=True, many=True)
     # wallets = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
 
     class Meta:
         model = models.Account
         fields = '__all__'
-
-
-# filter bo accounts
-# many to many
-# n + 1
-# clean arch
-# annotate and aggregate
