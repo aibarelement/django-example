@@ -23,3 +23,12 @@ class AccountViewSet(ModelViewSet):
 
     def perform_create(self, serializer: serializers.AccountSerializer):
         self.account_services.create_account(data=serializer.validated_data)
+
+
+class AccountViewSetV2(ModelViewSet):
+    account_services = services.AccountServicesV1()
+    serializer_class = serializers.AccountSerializerV2
+    filterset_class = filters.AccountFilter
+
+    def get_queryset(self):
+        return self.account_services.get_accounts()

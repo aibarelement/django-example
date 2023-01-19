@@ -42,3 +42,11 @@ class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Account
         fields = '__all__'
+
+
+class AccountSerializerV2(serializers.ModelSerializer):
+    wallets = _AccountWalletSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = models.Account
+        fields = '__all__'

@@ -20,4 +20,7 @@ class AccountServicesV1:
         return self.account_repos.get_accounts()
 
     def create_account(self, data: OrderedDict) -> None:
-        self.account_repos.create_account(data=data)
+        try:
+            self.account_repos.create_account(data=data)
+        except Exception as e:
+            print('error!')
