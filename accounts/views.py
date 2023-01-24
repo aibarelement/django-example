@@ -1,6 +1,5 @@
-
 from rest_framework.viewsets import ModelViewSet
-from accounts import serializers, models, filters, services
+from accounts import serializers, models, filters, services, pagination
 
 
 # one to one
@@ -15,20 +14,28 @@ class WalletViewSet(ModelViewSet):
 # one to many
 class AccountViewSet(ModelViewSet):
     account_services = services.AccountServicesV1()
-    serializer_class = serializers.AccountSerializer
+    pagination_class = pagination.CustomPagination
     filterset_class = filters.AccountFilter
 
-    def get_queryset(self):
-        return self.account_services.get_accounts()
+    def get_serializer_class(self):
+        account_serializers = {
+            'create': serializers.CreateAccountSerializer,
+            'list': serializers.ListAccountSerializer,
+        }
 
-    def perform_create(self, serializer: serializers.AccountSerializer):
+        return account_serializers.get(self.action, serializers.RetrieveAccountSerializer)
+
+    def get_queryset(self):
+        return self.account_services.get_accounts(action=self.action)
+
+    def perform_create(self, serializer: serializers.CreateAccountSerializer):
         self.account_services.create_account(data=serializer.validated_data)
 
 
 class AccountViewSetV2(ModelViewSet):
     account_services = services.AccountServicesV1()
-    serializer_class = serializers.AccountSerializerV2
+    serializer_class = serializers.RetrieveAccountSerializer
     filterset_class = filters.AccountFilter
 
     def get_queryset(self):
-        return self.account_services.get_accounts()
+        return self.account_services.get_accounts(action=self.action)
